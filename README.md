@@ -3,17 +3,21 @@
 ## Introduction
 
 ## Pre-request
+#### For genome download of Positive/Negative Group
+
     ncbi-genome-download: https://github.com/kblin/ncbi-genome-download 
-For genome download of Positive/Negative Group
+
+#### For confirming Positive/Negative group data
 
     kSNP: https://sourceforge.net/projects/ksnp/files/
-For confirming Positive/Negative group data
+
+#### For heatmap generation, table export
 
     Python Libraries: Pandas, Seaborn
-For heatmap generation, table export
+
+#### For getting MUMs
 
     Built-in ParSnp
-For getting MUMs
 
     
 ## Usage
