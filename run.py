@@ -358,8 +358,8 @@ def run(argv):
     complete_genomes_sorted = sortbyMUMlength(complete_genomes)
 
     f, ax = plt.subplots(figsize = (200, 10))
-    sns_plot = sns.heatmap(complete_genomes_sorted,\
-         cmap = sns.color_palette("Blues", 500),\
+    sns_plot = sns.heatmap(complete_genomes_sorted,
+         cmap = sns.color_palette("Blues", 500),
          linewidths = 0.1, ax = ax)
     ax.set_title('Blast result for all MUMs')
     ax.set_xlabel('Strains')
