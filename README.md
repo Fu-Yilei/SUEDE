@@ -6,6 +6,7 @@
 #### Install commands
 
     git clone https://gitlab.com/yileifu1996/probefinder.git
+    cd probefinder
     ./setup.sh
 #### run example
 
