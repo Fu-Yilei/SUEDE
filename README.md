@@ -5,8 +5,11 @@
 ## Pre-requests:
 #### Install commands
 
+    git clone https://gitlab.com/yileifu1996/probefinder.git
     ./setup.sh
+#### run example
 
+    python run.py -w ../projects/dz-collab-data-new -p 40  -c example_control -d mnt/e/NCBIntDB/nt
 
 ## Package explainations:
 ##### For genome download of Positive/Negative Group
@@ -15,7 +18,7 @@
 
 ##### For blastn
 
-    blast, there is a bug with -remote in blast 2.9.0, will be fixed in 2.10.0
+    blast [there is a bug with -remote in blast 2.9.0, will be fixed in 2.10.0]
 
 ##### For unzip downloaded data
 
@@ -64,16 +67,14 @@
 First time running may take more time because ete3 will build a local taxa database. 
 
 ## Description
-### run example
 
-    ./setup.sh
-    python run.py -w ../projects/dz-collab-data-new -p 40  -c example_control -d mnt/e/NCBIntDB/nt
+
 
 ### Pileline
 
 ![](readme/Pipeline.png)
 
-### Example Config File
+### Config File Explaination
 
     bacteria
 
