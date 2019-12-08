@@ -23,7 +23,10 @@ pbar = ProgressBar()
 
 def parseArgs(argv):
     parser = argparse.ArgumentParser(description = "SUEDE: Strain-level UniquE \
-        Dna probE finder\n ")
+        Dna probE finder  !!!IMPORTANT!!!: Do not use remote with blastn if you are \
+        using blast 2.9.0. This is a bug in blast -remote, will be fixed in \
+        blast 2.10.0. Blast nt database download instructions: \
+        https://www.ncbi.nlm.nih.gov/books/NBK537770/ ")
     parser.add_argument("-w", "--work_dir",  type=str, 
     help="Directory of work directory, default: ../NCBITaxa/", 
     default="../NCBITaxa/")
@@ -253,7 +256,7 @@ def run(argv):
     if workpath[-1] != "/":
         workpath = workpath+"/"
     controlpath = args.config_dir
-    try:                                                                            #Create Work Directory
+    try:                                                                        #Create Work Directory
         os.mkdir(workpath)
     except FileExistsError:
         print("File exists: " + workpath)
@@ -315,7 +318,7 @@ def run(argv):
     if "MUMs" not in os.listdir(workpath):
         print("#############################################################")
         print("running parsnp")
-        os.system("python ./parsnp/Parsnp.py -c -r ! -d " + gatherdatapath\
+        os.system("python ./parsnp/Parsnp.py -c -r ! -d " + gatherdatapath
                     + " -o " + workpath + "MUMs/ -p " + threadsnum)
     with open(workpath + "MUMs/parsnp.xmfa", "r") as f:
         readlist = f.readlines()
@@ -341,16 +344,16 @@ def run(argv):
     os.system("mkdir " + workpath + "blastresult/")
     for i in pbar(clusterl):
         if ntpath == None:
-            os.system("blastn -max_target_seqs 1000 -query -db nt "\
-            + workpath + "finalMUMs/" + i + " -out "\
-            + workpath + "blastresult/"+ i\
-            + ".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads " \
+            os.system("blastn -max_target_seqs 1000 -query -db nt "
+            + workpath + "finalMUMs/" + i + " -out "
+            + workpath + "blastresult/"+ i
+            +".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads "
             + threadsnum + " -remote")
         else:
             os.system("blastn -max_target_seqs 1000 -db "+ ntpath +
-            " -query " + workpath + "finalMUMs/" + i + " -out "\
-            + workpath + "blastresult/"+ i\
-            + ".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads " \
+            " -query " + workpath + "finalMUMs/" + i + " -out "
+            + workpath + "blastresult/"+ i
+            +".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads "
             + threadsnum)
     # os.system("mv *.out " + workpath + "blastresult/")
     os.system('find '+ workpath + 'blastresult/ -name "*" -type\
@@ -387,7 +390,8 @@ def run(argv):
 
     print("Generating heatmap with all over\
     95% alignment scores strains' complete genomes")
-    complete_genomes = dropless90(pd.read_csv(workpath+"complete_genomes.csv").drop("MUM", axis = 1))
+    newcg = pd.read_csv(workpath+"complete_genomes.csv").drop("MUM", axis = 1)
+    complete_genomes = dropless90(newcg)
     f, ax = plt.subplots(figsize = (200, 50))
     sns_plot = sns.heatmap(complete_genomes,
             cmap = sns.color_palette("Blues", 500),

@@ -3,14 +3,15 @@
 ## Introduction
 
 ## Pre-requests:
+#### IMPORTANT: Do not use remote with blastn if you are using blast 2.9.0. This is a bug in blast -remote, will be fixed in blast 2.10.0. Blast nt database download instructions: https://www.ncbi.nlm.nih.gov/books/NBK537770/ 
 #### Install commands
 
     git clone https://gitlab.com/yileifu1996/probefinder.git
     cd probefinder
     ./setup.sh
-#### run example
+#### run example(please indicate nt database path if using blast 2.9.0)
 
-    python run.py -w ../projects/dz-collab-data-new -p 40  -c example_control -d mnt/e/NCBIntDB/nt
+    python run.py -c example_control 
 
 ## Package explainations:
 ##### For genome download of Positive/Negative Group
