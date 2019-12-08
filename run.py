@@ -29,8 +29,10 @@ def parseArgs(argv):
     default="../NCBITaxa/")
     parser.add_argument("-c", "--config_dir", type=str, required=True,
     help = "Directory of configuration file")
-    parser.add_argument("-d", "--database_path", type=str, required=True,
-    help = "Directory of NCBI nt database")
+    parser.add_argument("-d", "--database_path", type=str,
+    help = "Directory of NCBI nt database, defalult: remote (!!!Do not use \
+         remote with blastn 2.9.0, there is a bug in that version, \
+            will be fixed in 2.10.0!!!) ")
     parser.add_argument("-t", "--tree_help", 
     help = "Use parsnp to generate a tree to evaluate positive control? \
         defalut: False", action="store_true")
@@ -205,6 +207,37 @@ def sortbyMUMlength(form):
     form.sort_values('length', ascending=False, inplace=True)
     return(form.drop(["length"], axis=1))
 
+def printTree():
+    '''
+    Generate and Print Tree
+    '''
+    print("#############################################################")
+    combinedpath = workpath + "combined/"
+    os.system("mkdir " + combinedpath)
+    os.system("cp " + positivepath + "* " + combinedpath)
+    os.system("cp " + negativepath + "* " + combinedpath)
+    if "resultparsnp" in os.listdir(workpath):
+        print("parsnp result exists, skipping parsnp!")
+    else:
+        print("running parsnp to get a Newik tree of positive data")
+        os.system("python ./parsnp/Parsnp.py -b -c -r ! -d " + positivepath\
+            + " -o " + workpath + "resultparsnp/ -p " + threadsnum)
+    with open(workpath+"resultparsnp/parsnp.tree", "r") as f:
+        l = f.readline()[:-1]
+    tree = Tree(l)
+    print("#############################################################")
+    print("Tree for files, maybe helpful for identifying wrong data")
+    print(tree)
+    print("rerun without this parameter after change the\
+positve/negative dataset!")
+    exit()
+
+def dropless90(table):
+    for i in table.columns:
+        if max(list(table[i])) < 95:
+            table = table.drop(i ,axis=1)
+    return table
+
 
 def run(argv):
     args = parseArgs(argv)
@@ -212,6 +245,9 @@ def run(argv):
     # print(args.config_dir)
     global workpath
     global ntpath
+    global threadsnum
+    global positivepath
+    global negativepath
     workpath = args.work_dir
     threadsnum = str(args.processes)
     if workpath[-1] != "/":
@@ -222,7 +258,9 @@ def run(argv):
     except FileExistsError:
         print("File exists: " + workpath)
     ntpath = args.database_path
-
+    '''
+    Get Positive/Negative controls
+    '''
 
     print("Work Path:" + workpath)
     print("Config file path: " + controlpath)
@@ -253,25 +291,11 @@ def run(argv):
     for i in negative_paths:
         for j in os.listdir(i):
             os.system("cp " + i + "/" + j + " " + negativepath)
-    
-
+    '''
+    Generate and Print Tree
+    '''
     if args.tree_help:
-        print("#############################################################")
-        if "resultparsnp" in os.listdir(workpath):
-            print("parsnp result exists, skipping parsnp!")
-        else:
-            print("running parsnp to get a Newik tree of positive data")
-            os.system("python ./parsnp/Parsnp.py -c -r ! -d " + positivepath\
-                + " -o " + workpath + "resultparsnp/ -p " + threadsnum)
-        with open(workpath+"resultparsnp/parsnp.tree", "r") as f:
-            l = f.readline()[:-1]
-        tree = Tree(l)
-        print("#############################################################")
-        print("Tree for files, maybe helpful for identifying wrong data")
-        print(tree)
-        print("rerun without this parameter after change the\
- positve/negative dataset!")
-        exit()
+        printTree()
     
 
     print("#############################################################")
@@ -316,11 +340,18 @@ def run(argv):
     print("Running Blastn agianst nt database")
     os.system("mkdir " + workpath + "blastresult/")
     for i in pbar(clusterl):
-        os.system("blastn -max_target_seqs 1000 -db "+ ntpath +
-        " -query " + workpath + "finalMUMs/" + i + " -out "\
-        + workpath + "blastresult/"+ i\
-        + ".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads " \
-        + threadsnum)
+        if ntpath == None:
+            os.system("blastn -max_target_seqs 1000 -query -db nt "\
+            + workpath + "finalMUMs/" + i + " -out "\
+            + workpath + "blastresult/"+ i\
+            + ".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads " \
+            + threadsnum + " -remote")
+        else:
+            os.system("blastn -max_target_seqs 1000 -db "+ ntpath +
+            " -query " + workpath + "finalMUMs/" + i + " -out "\
+            + workpath + "blastresult/"+ i\
+            + ".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads " \
+            + threadsnum)
     # os.system("mv *.out " + workpath + "blastresult/")
     os.system('find '+ workpath + 'blastresult/ -name "*" -type\
  f -size 0c | xargs -n 1 rm -f')                                                #Remove all damaged blast results
@@ -354,16 +385,16 @@ def run(argv):
     with open(workpath+"complete_genomes.csv", "w") as f:
         f.write(rescg.to_csv())
 
-    complete_genomes = pd.read_csv(workpath+"complete_genomes.csv", index_col=0)
-    complete_genomes_sorted = sortbyMUMlength(complete_genomes)
-
-    f, ax = plt.subplots(figsize = (200, 10))
-    sns_plot = sns.heatmap(complete_genomes_sorted,
-         cmap = sns.color_palette("Blues", 500),
-         linewidths = 0.1, ax = ax)
+    print("Generating heatmap with all over\
+    95% alignment scores strains' complete genomes")
+    complete_genomes = dropless90(pd.read_csv(workpath+"complete_genomes.csv").drop("MUM", axis = 1))
+    f, ax = plt.subplots(figsize = (200, 50))
+    sns_plot = sns.heatmap(complete_genomes,
+            cmap = sns.color_palette("Blues", 500),
+            linewidths = 0.1, ax = ax)
     ax.set_title('Blast result for all MUMs')
     ax.set_xlabel('Strains')
     ax.set_ylabel('MUMs')
-    sns_plot.savefig("output.png")
+    sns_plot.figure.savefig(workpath+"competegenomes.png")
 
 run(sys.argv[1:])

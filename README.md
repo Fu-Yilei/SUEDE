@@ -2,31 +2,41 @@
 
 ## Introduction
 
-## Pre-request
-#### For genome download of Positive/Negative Group
+## Pre-requests:
+#### Install commands
+
+    ./setup.sh
+
+
+## Package explainations:
+##### For genome download of Positive/Negative Group
 
     ncbi-genome-download: https://github.com/kblin/ncbi-genome-download 
 
-#### For unzip downloaded data
+##### For blastn
+
+    blast, there is a bug with -remote in blast 2.9.0, will be fixed in 2.10.0
+
+##### For unzip downloaded data
 
     gunzip
 
-#### For generating and exporting Tables and Heatmap
+##### For generating and exporting Tables and Heatmap
 
     pandas: https://pandas.pydata.org/
     seaborn: https://seaborn.pydata.org/
 
-#### For getting Taxon ID from name, printing Newik Tree
+##### For getting Taxon ID from name, printing Newik Tree
 
     ete3: http://etetoolkit.org/
 
-#### Other Python Libraries:
+##### Other Python Libraries
 
     os, sys, argparse, numpy, progressbar
 
-#### For getting MUMs
+##### For getting MUMs
 
-    Built-in Parsnp
+    Parsnp: https://github.com/marbl/parsnp
 
     
 ## Usage
@@ -51,7 +61,13 @@
     -m, --MUMS_only       Only get MUMs, not blast against database? defalut:
                             False
 
+First time running may take more time because ete3 will build a local taxa database. 
+
 ## Description
+### run example
+
+    ./setup.sh
+    python run.py -w ../projects/dz-collab-data-new -p 40  -c example_control -d mnt/e/NCBIntDB/nt
 
 ### Pileline
 
