@@ -22,6 +22,13 @@ pbar = ProgressBar()
 # ntpath =  /home/Users/yf20/ncbi_database/newnt/nt
 
 def parseArgs(argv):
+    """Function for parsing Arguments
+    
+    Args:
+        argv: The arguments sent into this program
+    Returns:
+        arguments
+    """
     parser = argparse.ArgumentParser(description = "SUEDE: Strain-level UniquE \
         Dna probE finder  !!!IMPORTANT!!!: Do not use remote with blastn if you are \
         using blast 2.9.0. This is a bug in blast -remote, will be fixed in \
@@ -50,7 +57,14 @@ def parseArgs(argv):
 
 
 def getTaxid(namelist):
-    # Get Taxon id
+    """Get Taxon id from NCBI taxon databse
+    Use try except to return wrongly input name, and get accession ids fron the 
+    name
+    Args:
+        namelist: the list of target names
+    Returns:
+        return the list of taxon ids from the list name
+    """    
     accessid = []
     for i in namelist:
         name2taxid = ncbi.get_name_translator([i])
@@ -63,6 +77,13 @@ def getTaxid(namelist):
     return accessid
 
 def ungz_all_fasta(top_dir):
+    """ungip all fasta.gz files
+    ncbi database have default gz download filetype, recursively ungzip
+    Args:
+        top_dir: the directory of downloaded files
+    Returns:
+        nonthing 
+    """   
     if os.path.isdir(top_dir):
         if os.listdir(top_dir) == []:
             return
@@ -76,6 +97,13 @@ def ungz_all_fasta(top_dir):
 
 
 def rm_not_fasta(current_dir):
+    """delete all non-fasta files in the directory
+
+    Args:
+        current_dir: the directory
+    Returns:
+        nonthing 
+    """   
     remove_list = []
     for i in os.listdir(current_dir):
         if i[-4:] != ".fna":
@@ -83,7 +111,16 @@ def rm_not_fasta(current_dir):
     for i in remove_list:
         os.system("rm -r " + current_dir + i)
 
+
 def download_db(taxnamelist, group):
+    """download the NCBI fasta files from name
+    use ncbi-gneome-download to download sequences
+    Args:
+        taxnamelist: the list of taxon names
+        group: the name of taxon groups
+    Returns:
+        nonthing 
+    """   
     for i in getTaxid(taxnamelist):
         Taxon = list(i.keys())[0]
         Taxonid = str(list(i.values())[0][0])
@@ -115,6 +152,18 @@ def download_db(taxnamelist, group):
 
 
 def getinfo(config):
+    """get taxon informations form the inpuut configuration file
+
+    Args:
+        config: the input configuration file
+    Returns:
+        positive: the list of positive taxon names
+        positive_paths: the path of positive taxons
+        negative: the list of negative taxon names
+        negative_paths: the path of negative taxons
+        whole: combined list
+        group: taxon group
+    """   
     output = [[]]
     for x in config:
         output[-1].append(x)
@@ -155,6 +204,13 @@ def getinfo(config):
 
 
 def detectdataexist(path):
+    """detect if the data exist
+
+    Args:
+        path: the directory of input file
+    Returns:
+        True/False
+    """   
     if "positive" in os.listdir(path) and "negative" in os.listdir(path):
         return True
     else:
@@ -162,6 +218,14 @@ def detectdataexist(path):
 
 
 def generate_read_list(reads):
+    """generate the list of reads with names
+
+    Args:
+        reads: reads
+    Returns:
+        name_list: names
+        read_list: reads
+    """   
     name_list = []
     read_list = []
     tempstr = ""
@@ -184,6 +248,18 @@ def generate_read_list(reads):
     return (name_list, read_list)
 
 def percenttostrain(filepath, blastresultfile, clusters):
+    """from file to get a dictionary that contains the alignment score of
+    strains VS MUMs
+
+    Args:
+        filepath: path to files
+        blastresultfile: path to the blast results
+        clusters: MUMs clusters(parsnp result)
+    Returns:
+        percent2strain: a dictionary stors the percentage of one MUM against 
+        strains
+        strain: a list of strains
+    """   
     percent2strain = []
     strain = []
     for i in blastresultfile:
@@ -206,6 +282,12 @@ def percenttostrain(filepath, blastresultfile, clusters):
     return (percent2strain, strain)
 
 def sortbyMUMlength(form):
+    """sort MUMs by length 
+    Args:
+        form: pandas dataframe
+    Returns:
+        The sorted pandas dataframe
+    """   
     form['length'] = form.index.str.len()
     form.sort_values('length', ascending=False, inplace=True)
     return(form.drop(["length"], axis=1))
@@ -236,6 +318,9 @@ positve/negative dataset!")
     exit()
 
 def dropless90(table):
+    """
+    when getting tables, drop strains have alignment quality less than 95%
+    """
     for i in table.columns:
         if max(list(table[i])) < 95:
             table = table.drop(i ,axis=1)
