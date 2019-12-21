@@ -217,7 +217,7 @@ def detectdataexist(path):
         return False
 
 
-def generate_read_list(reads):
+def generate_read_list(reads, MUML):
     """generate the list of reads with names
 
     Args:
@@ -230,22 +230,36 @@ def generate_read_list(reads):
     read_list = []
     tempstr = ""
     for i in range(len(reads)):
-        if reads[i][0] == "#":
+        if "#SequenceCount" in reads[i]:
+            sc = int(reads[i].split()[1])
+        if reads[i][0] == "#" or reads[i][0] == "=":
             continue
         if reads[i][0] == ">":
             name_list.append(reads[i][:-1])
             # print(reads[i])
-        elif i == len(reads) - 1:
+        elif i == len(reads) - 2:
             tempstr = tempstr+reads[i][:-1]
-            read_list.append(tempstr)
+            read_list.append([i for i in re.split("A|C|T|G|-",tempstr) if i] )
             tempstr = ""
         elif reads[i+1][0] == ">":
             tempstr = tempstr+reads[i][:-1]
-            read_list.append(tempstr)
+            read_list.append([i for i in re.split("A|C|T|G|-",tempstr) if i] )
+            tempstr = ""
+        elif reads[i+1][0] == "=":
+            tempstr = tempstr+reads[i][:-1]
+            read_list.append([i for i in re.split("A|C|T|G|-",tempstr) if i] )
             tempstr = ""
         else:
             tempstr = tempstr+reads[i][:-1]
-    return (name_list, read_list)
+    final_reads = []
+    for i in range(len(read_list)):
+        if i % sc == 0:
+            final_reads+=read_list[i]
+    clusters = {}
+    for i in range(len(final_reads)):
+        if len(final_reads[i]) > MUML:
+            clusters.update({"cluster"+str(i):final_reads[i]})
+    return clusters
 
 def percenttostrain(filepath, blastresultfile, clusters):
     """from file to get a dictionary that contains the alignment score of
@@ -314,7 +328,7 @@ def printTree():
     print("Tree for files, maybe helpful for identifying wrong data")
     print(tree)
     print("rerun without this parameter after change the\
-positve/negative dataset!")
+positive/negative dataset!")
     exit()
 
 def dropless90(table):
@@ -363,7 +377,7 @@ def run(argv):
     else:
         print("#############################################################")
         print("Taxon group: " + group)
-        print("Positve control group:")
+        print("Positive control group:")
         for i in positive:
             print(i)
         print()
@@ -403,19 +417,21 @@ def run(argv):
     if "MUMs" not in os.listdir(workpath):
         print("#############################################################")
         print("running parsnp")
-        os.system("python ./parsnp/Parsnp.py -c -r ! -d " + gatherdatapath
+        print("python ./parsnp/Parsnp.py -c -r ! -d " + gatherdatapath
+                    + " -o " + workpath + "MUMs/ -p " + threadsnum)
+        os.system("python ./parsnp/Parsnp.py -c -r " + gatherdatapath + randreddir +" -d " + gatherdatapath
                     + " -o " + workpath + "MUMs/ -p " + threadsnum)
     with open(workpath + "MUMs/parsnp.xmfa", "r") as f:
         readlist = f.readlines()
-    (nlist, rlist) = generate_read_list(readlist)
-    clusters = {}
-    for i in range(len(nlist)):
-        cluster = nlist[i].split(" ")[2]
-        if cluster not in clusters:                                             #Exclude all LCBs
-            if ('A' in rlist[i]) or ('T' in rlist[i]) or ('C' in rlist[i])\
-                 or ('G' in rlist[i]) or ('-' in rlist[i]):
-                continue
-            clusters.update({cluster: rlist[i]})
+    clusters = generate_read_list(readlist, 40)
+#     clusters = {}
+#     for i in range(len(nlist)):
+#         cluster = nlist[i].split(" ")[2]
+#         if cluster not in clusters:                                             #Exclude all LCBs
+#             if ('A' in rlist[i]) or ('T' in rlist[i]) or ('C' in rlist[i])\
+#                  or ('G' in rlist[i]) or ('-' in rlist[i]):
+#                 continue
+#             clusters.update({cluster: rlist[i]})
     os.system("mkdir " + workpath + "finalMUMs/")
     for i in clusters:
         with open(workpath + "finalMUMs/" + i + ".fasta", "w") as f:
@@ -429,13 +445,13 @@ def run(argv):
     os.system("mkdir " + workpath + "blastresult/")
     for i in pbar(clusterl):
         if ntpath == None:
-            os.system("blastn -max_target_seqs 1000 -query -db nt "
+            os.system("blastn -max_target_seqs 2000 -query -db nt "
             + workpath + "finalMUMs/" + i + " -out "
             + workpath + "blastresult/"+ i
             +".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads "
             + threadsnum + " -remote")
         else:
-            os.system("blastn -max_target_seqs 1000 -db "+ ntpath +
+            os.system("blastn -max_target_seqs 2000 -db "+ ntpath +
             " -query " + workpath + "finalMUMs/" + i + " -out "
             + workpath + "blastresult/"+ i
             +".out -outfmt '6 qseqid sseqid pident evalue stitle' -num_threads "
